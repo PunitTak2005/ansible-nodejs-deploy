@@ -1,0 +1,12 @@
+---
+# Handlers Definition File for mern_deploy role
+- name: reload nginx
+  ansible.builtin.service:
+    name: nginx
+    state: reloaded
+
+- name: restart httpd
+  ansible.builtin.service:
+    name: httpd
+    state: restarted
+    enabled: yes

@@ -1,0 +1,91 @@
+---
+# Part A — Base Server Preparation
+# Covers: system update, base packages, Node.js 20.x, MongoDB 7.0
+- name: Update system and install base tools
+  block:
+    - name: Update all packages
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: yes
+
+    - name: Install base packages
+      ansible.builtin.dnf:
+        name:
+          - git
+          - curl
+          - wget
+          - firewalld
+        state: present
+
+    - name: Enable and start firewalld
+      ansible.builtin.service:
+        name: firewalld
+        state: started
+        enabled: yes
+
+  rescue:
+    - name: Base prep failed
+      ansible.builtin.debug:
+        msg: "Base server preparation failed. Check dnf/repo connectivity."
+
+  always:
+    - name: Base prep step completed
+      ansible.builtin.debug:
+        msg: "Base server preparation step finished (success or failure)."
+
+- name: Download NodeSource setup script
+  ansible.builtin.get_url:
+    url: "https://rpm.nodesource.com/setup_20.x"
+    dest: /tmp/nodesource_setup.sh
+    mode: '0755'
+
+- name: Run NodeSource setup script
+  ansible.builtin.command: bash /tmp/nodesource_setup.sh
+  register: node_setup_result
+  changed_when: "'Repository configured' in node_setup_result.stdout or node_setup_result.rc == 0"
+
+- name: Install Node.js
+  ansible.builtin.dnf:
+    name: nodejs
+    state: present
+
+- name: Confirm Node.js version
+  ansible.builtin.command: node -v
+  register: node_version
+  changed_when: false
+
+- name: Print Node.js version
+  ansible.builtin.debug:
+    msg: "Installed Node.js version: {{ node_version.stdout }}"
+
+- name: Add MongoDB repo file
+  ansible.builtin.template:
+    src: mongodb.repo.j2
+    dest: /etc/yum.repos.d/mongodb-org-7.0.repo
+    mode: '0644'
+
+- name: Install MongoDB
+  ansible.builtin.dnf:
+    name: mongodb-org
+    state: present
+
+- name: Enable and start MongoDB
+  ansible.builtin.service:
+    name: mongod
+    state: started
+    enabled: yes
+
+- name: Check MongoDB service status
+  ansible.builtin.command: systemctl is-active mongod
+  register: mongo_status
+  changed_when: false
+
+- name: Show MongoDB status
+  ansible.builtin.debug:
+    msg: "MongoDB status: {{ mongo_status.stdout }}"
+  when: mongo_status.stdout == "active"
+
+- name: Update package cache only (avoid full system-wide update if hanging)
+  ansible.builtin.dnf:
+    update_cache: yes

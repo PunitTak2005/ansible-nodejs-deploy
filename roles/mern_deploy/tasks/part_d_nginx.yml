@@ -1,0 +1,52 @@
+---
+# Part D — Nginx Reverse Proxy
+# Covers: install, server block, known-issue fix (403 - permissions + SELinux context)
+- name: Install Nginx
+  ansible.builtin.dnf:
+    name: nginx
+    state: present
+
+- name: Enable and start Nginx
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Deploy Nginx server block
+  ansible.builtin.template:
+    src: society.conf.j2
+    dest: /etc/nginx/conf.d/society.conf
+    mode: '0644'
+  notify: reload nginx
+
+# Known Issue: 403 Forbidden — Cause 1: file/directory permissions
+- name: Fix ownership of dist folder
+  ansible.builtin.file:
+    path: "{{ app_dir }}/client/dist"
+    owner: nginx
+    group: nginx
+    recurse: yes
+
+- name: Fix directory permissions
+  ansible.builtin.file:
+    path: "{{ item }}"
+    mode: '0755'
+    state: directory
+  loop:
+    - /var/www
+    - "{{ app_dir }}"
+    - "{{ app_dir }}/client"
+    - "{{ app_dir }}/client/dist"
+
+# Known Issue: 403 Forbidden — Cause 2: SELinux file context
+- name: Set SELinux context for dist folder
+  community.general.sefcontext:
+    target: "{{ app_dir }}/client/dist(/.*)?"
+    setype: httpd_sys_content_t
+    state: present
+  register: sefcontext_result
+
+- name: Apply SELinux context (restorecon)
+  ansible.builtin.command: restorecon -Rv "{{ app_dir }}/client/dist"
+  when: sefcontext_result.changed
+  changed_when: true

@@ -1,0 +1,28 @@
+---
+# Master task file — imports each part in deployment order.
+# import_tasks is used (not include_tasks) since the task list is static
+# and known ahead of time — this lets ansible-playbook --list-tasks show
+# every task from every part upfront.
+- name: Part A - Base server preparation
+  ansible.builtin.import_tasks: part_a_base_prep.yml
+  tags: part_a
+
+- name: Part B - Backend deployment
+  ansible.builtin.import_tasks: part_b_backend.yml
+  tags: part_b
+
+- name: Part C - Frontend build
+  ansible.builtin.import_tasks: part_c_frontend.yml
+  tags: part_c
+
+- name: Part D - Nginx reverse proxy
+  ansible.builtin.import_tasks: part_d_nginx.yml
+  tags: part_d
+
+- name: Part E - Firewalld and SELinux for proxy layer
+  ansible.builtin.import_tasks: part_e_firewall_selinux.yml
+  tags: part_e
+
+- name: Part F - SSL with Let's Encrypt
+  ansible.builtin.import_tasks: part_g_ssl.yml
+  tags: part_f

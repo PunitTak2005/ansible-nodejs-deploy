@@ -1,0 +1,23 @@
+---
+# Part E — Firewalld & SELinux for the Proxy Layer
+# Covers: opening http/https, known-issue fix (502 - SELinux network boolean)
+- name: Open HTTP service in firewalld
+  ansible.posix.firewalld:
+    service: http
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: Open HTTPS service in firewalld
+  ansible.posix.firewalld:
+    service: https
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+# Known Issue: 502 Bad Gateway — SELinux blocks outbound proxy connection
+- name: Allow Nginx outbound connection to backend (SELinux boolean)
+  ansible.posix.seboolean:
+    name: httpd_can_network_connect
+    state: yes
+    persistent: yes

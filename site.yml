@@ -1,0 +1,7 @@
+---
+- name: Deploy MERN Society Management System on RHEL 9
+  hosts: appserver
+  become: yes
+  gather_facts: yes
+  roles:
+    - mern_deploy
