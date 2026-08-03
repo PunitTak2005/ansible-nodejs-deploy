@@ -22,14 +22,3 @@ Ensure you have the following installed on your local control machine:
 
 ---
 
-## ⚙️ Project Structure
-
-```text
-ansible-nodejs-deploy/
-├── inventory/          # Target server inventories
-│   └── hosts.ini       # Server IP addresses and connection details
-├── playbooks/          # Ansible playbooks
-│   └── deploy.yml      # Main deployment playbook
-├── roles/              # Reusable roles
-│   └── nodejs/         # Tasks for setting up Node.js and the app
-└── README.md
